@@ -125,6 +125,11 @@ section{position:relative}
   font:600 16px var(--sans);cursor:pointer;transition:background .15s;
 }
 .auth-submit:hover{background:#2558d8}
+.auth-autoreg{
+  width:100%;height:44px;margin-top:10px;border-radius:10px;border:1.5px solid #cbd5e1;
+  background:#f8fafc;color:#334155;font:600 14.5px var(--sans);cursor:pointer;transition:all .15s;
+}
+.auth-autoreg:hover{border-color:#3370FF;color:#3370FF;background:#eff6ff}
 .auth-warn{font-size:12.5px;color:#dc2626;min-height:18px;margin-top:8px;text-align:center}
 .auth-success{
   margin-top:14px;background:#00c292;color:#fff;border-radius:10px;padding:15px 17px;
@@ -310,7 +315,10 @@ h2{font-size:clamp(28px,4vw,44px);letter-spacing:-.03em;line-height:1.12;font-we
 .chip.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent)}
 .chip.cursed{border-color:#7d1c17;color:#c92218}
 .chip i{font-style:normal;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 14%, transparent);font-size:14px}
-.chip.more{color:var(--muted);cursor:default}
+.chip.more{color:var(--muted);cursor:pointer;border-style:dashed}
+.chip.more:hover{color:var(--accent);border-color:var(--accent)}
+.chip.extra-node{display:none}
+.chip.extra-node.shown{display:flex;animation:fadeUp .22s ease}
 
 .day{display:grid;gap:0;border-left:2px solid var(--line);margin-left:8px}
 .slot{position:relative;padding:0 0 28px 28px}
@@ -473,6 +481,8 @@ body.stage2 .chat-head,body.infected .chat-head{background:#6e0f09}
 .cmsg.bot{background:#f1f5f9;color:#111827;align-self:flex-start}
 body.stage2 .cmsg.bot,body.infected .cmsg.bot{background:#231314;color:#f1d3d0}
 .cmsg.user{background:#3370FF;color:#fff;align-self:flex-end}
+.cmsg.zayu{background:rgba(160,16,12,.16);color:#dc2626;border:1px solid rgba(220,38,38,.45);font-weight:800;align-self:flex-end}
+#chatInput.zayu-inp{color:#dc2626;font-weight:800}
 .chat-form{display:flex;border-top:1px solid var(--line)}
 .chat-form input{flex:1;border:0;padding:11px 12px;font:13px var(--sans);background:transparent;color:inherit;outline:none}
 .chat-form button{border:0;background:transparent;color:var(--accent);font:700 13px var(--sans);padding:0 14px;cursor:pointer}
@@ -516,11 +526,7 @@ body.stage2 .cmsg.bot,body.infected .cmsg.bot{background:#231314;color:#f1d3d0}
 #toast{position:fixed;top:76px;left:50%;transform:translate(-50%,-20px);z-index:292;background:#151214;color:#ede5dc;border:1px solid #4a1e1b;border-radius:14px;padding:12px 18px;font-size:14px;font-weight:600;box-shadow:0 14px 40px -10px rgba(0,0,0,.6);opacity:0;transition:.4s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 
-/* 网站音乐选项：初始没有声音时隐藏 */
-#sound,#lang{position:fixed;left:18px;z-index:265;font:600 13px var(--sans);padding:9px 14px;border-radius:999px;cursor:pointer;background:var(--card);color:var(--fg);border:1px solid var(--line)}
-#sound{bottom:18px;display:none}
-#sound.shown{display:inline-flex;align-items:center;gap:6px}
-#lang{bottom:64px}
+#lang{position:fixed;left:18px;bottom:18px;z-index:265;font:600 13px var(--sans);padding:9px 14px;border-radius:999px;cursor:pointer;background:var(--card);color:var(--fg);border:1px solid var(--line)}
 
 #scare{position:fixed;inset:0;z-index:300;background:#000;display:none;place-items:center;overflow:hidden}
 #scare.on{display:grid}
@@ -607,6 +613,7 @@ body.stage2 .cmsg.bot,body.infected .cmsg.bot{background:#231314;color:#f1d3d0}
       </label>
 
       <button type="submit" class="auth-submit" id="authSubmitBtn" data-i18n="auth.loginBtn">登入</button>
+      <button type="button" class="auth-autoreg" id="autoRegBtn" data-i18n="auth.autoRegBtn">⚡ 自动注册</button>
       <div class="auth-warn" id="authWarn"></div>
 
       <div class="auth-success" id="authSuccess">
@@ -650,8 +657,7 @@ body.stage2 .cmsg.bot,body.infected .cmsg.bot{background:#231314;color:#f1d3d0}
   </div>
 </div>
 
-<!-- FLOATING CONTROLS (Site Music button hidden initially when sound is off!) -->
-<button id="sound" data-i18n="sound.off">♪ 网站音乐：关</button>
+<!-- FLOATING CONTROLS (Audio auto-engages with no mute/close button) -->
 <button id="lang" aria-live="polite"></button>
 <button id="chatFab" aria-label="Support chat">💬</button>
 <div id="chatBox">
@@ -702,7 +708,7 @@ body.stage2 .cmsg.bot,body.infected .cmsg.bot{background:#231314;color:#f1d3d0}
 
     <div class="dash-subbar">
       <span><span class="branch-tag" id="branchTag"></span><span id="lead" data-i18n="dash.notice">欢迎回到 VeilCloud 1.1.3。你的专属加密隧道已就绪，向下滑动查看节点状态与安全遥测。</span></span>
-      <span><button id="heroSound" data-i18n="sound.heroOff">开启网站音乐</button> · <button id="replayGateBtn" data-i18n="dash.replayGate">重看安全验证</button></span>
+      <span><button id="replayGateBtn" data-i18n="dash.replayGate">重看安全验证</button></span>
     </div>
 
     <div class="metrics">
@@ -799,9 +805,13 @@ body.stage2 .cmsg.bot,body.infected .cmsg.bot{background:#231314;color:#f1d3d0}
       <button class="chip" data-node="Zurich #02 · 48ms"><i>🇨🇭</i><span>Zurich #02</span></button>
       <button class="chip" data-node="New York #18 · 65ms"><i>🇺🇸</i><span>New York #18</span></button>
       <button class="chip" data-node="Reykjavik #01 · 51ms"><i>🇮🇸</i><span>Reykjavik #01</span></button>
-      <button class="chip cursed" data-cursed="router" data-node="192.168.1.1 · 0ms"><i>📡</i><span data-i18n="int.chipOld">192.168.1.1（你家路由器）</span></button>
-      <button class="chip cursed" data-cursed="bedroom" data-node="127.0.0.1 · 0ms"><i>🚪</i><span data-i18n="int.chipMirror">127.0.0.1（你的卧室）</span></button>
-      <span class="chip more" data-i18n="int.chipMore">+ 3,200 节点</span>
+      <button class="chip" id="nodeChip7" data-node="London #07 · 38ms"><i>🇬🇧</i><span id="nodeChip7Label">London #07</span></button>
+      <button class="chip" id="nodeChip8" data-node="Toronto #11 · 56ms"><i>🇨🇦</i><span id="nodeChip8Label">Toronto #11</span></button>
+      <button type="button" class="chip extra-node" data-node="Seoul #03 · 29ms"><i>🇰🇷</i><span>Seoul #03</span></button>
+      <button type="button" class="chip extra-node" data-node="192.168.1.1 · 1ms"><i>📡</i><span>192.168.1.1 (Gateway)</span></button>
+      <button type="button" class="chip extra-node" data-node="192.168.1.15 · 0ms"><i>💻</i><span>192.168.1.15 (Local)</span></button>
+      <button type="button" class="chip extra-node" data-node="127.0.0.1 · 0ms"><i>🔌</i><span>127.0.0.1 (Loopback)</span></button>
+      <button type="button" class="chip more" id="moreNodesBtn" data-i18n="int.chipMore">+ 3,200 节点</button>
     </div>
   </div>
 </section>
@@ -1054,8 +1064,9 @@ const DICT = {
     'auth.hasAcc': `Already have an account?`,
     'auth.toReg': `Create account`,
     'auth.toLogin': `Sign in`,
-    'auth.email': `Email / Username`,
-    'auth.emailPh': `Enter any account or email`,
+    'auth.email': `Account`,
+    'auth.emailPh': `English letters and numbers only`,
+    'auth.alphaOnly': `Account only allows English letters and numbers.`,
     'auth.pass': `Password`,
     'auth.passPh': `Enter password`,
     'auth.confirm': `Confirm password`,
@@ -1072,6 +1083,9 @@ const DICT = {
     'auth.passHintReg': `Password strength: Good (We'll remember it for you.)`,
     'auth.loginBtn': `Sign in`,
     'auth.regBtn': `Create account`,
+    'auth.autoRegBtn': `⚡ Auto-register`,
+    'auth.autoRegOkTitle': `Auto-registered!`,
+    'auth.autoRegOkDesc': `Account "13" has been assigned automatically. Entering User Center...`,
     'auth.regOkTitle': `Account created!`,
     'auth.regOkDesc': `Account "{acc}" is ready (1 existing LAN device auto-linked). Redirecting to sign in...`,
     'auth.loginAfterReg': `Account "{acc}" created. Please sign in below.`,
@@ -1111,14 +1125,15 @@ const DICT = {
     'hero.greet': `Encrypted & Protected`,'hero.disconnectBtn': `Disconnect`,'hero.disconnecting': `Disconnecting…`,'hero.reconnected': `Auto-reconnected for your safety.`,'hero.disconnectDenied': `DENIED: PEER_02 is using this tunnel.`,
     'hero.nodeLabel': `Exit node`,'hero.nodeVal': `Tokyo #04 · 18ms`,'hero.shieldLabel': `Tunnel status`,'hero.doorState': `Protected`,'hero.peersLabel': `Tunnel peers`,'hero.camLabel': `Local webcam`,'hero.camOn': `Streaming`,'hero.trusted': `Trusted by 18M+ privacy-first users`,
     'chat.title': `VeilCloud Live Support`,'chat.titleCreepy': `Agent #00 · Outside your door`,'chat.ph': `Ask support anything...`,'chat.send': `Send`,
-    'chat.welcome': `Hi! I'm VeilCloud Support. Need help importing nodes or subscribing?`,'chat.replyNormal': `Your tunnel is already active. Just scroll down to inspect your node status.`,
-    'chat.replyCreepy1': `Stop asking support how to leave. You already signed in.`,'chat.replyCreepy2': `I can hear you typing from the hallway.`,'chat.replyCreepy3': `Don't turn around.`,
+    'chat.welcome': `Please become a paid subscriber first...`,'chat.replyNormal': `Please become a paid subscriber first...`,
+    'chat.replyCreepy1': `Support is offline... please resolve this matter yourself...`,'chat.replyCreepy2': `What on earth are you doing??`,'chat.replyCreepy3': `???`,'chat.zayu': `我是杂鱼！`,
     'mut.stage1.node': `LOCAL BRIDGE · 2ms`,'mut.stage2.h1': `Why did you scroll back up? <em>There is no exit up here.</em>`,'mut.stage2.lead': `The User Center you logged into is gone. The tunnel handshake already finished.`,
     'mut.stage2.featH2': `Everything you read earlier<br>has changed.`,'mut.stage2.how1t': `You already signed in`,'mut.stage2.how1p': `Every scroll deeper granted local port access.`,
     'mut.stage2.how2t': `Your webcam LED is off`,'mut.stage2.how2p': `That doesn't mean the sensor stopped recording.`,'mut.stage2.how3t': `Stop trying to close this tab`,'mut.stage2.how3p': `We can see your cursor reaching for the top of the screen.`,
     'mut.stage2.q1': `"Please stop scrolling back up. It knows you're looking for a way out."`,'mut.stage2.pl1': `Disconnected · 03:14 AM`,
     'mut.stage2.q2': `"I tried closing the browser. The fan kept spinning and my speaker whispered my name."`,'mut.stage2.pl2': `192.168.1.254 · Behind you`,'mut.stage2.barSaid': `Times you tried to escape`,
     'int.kicker': `Global network`,'int.h2': `Click any node to switch your exit.`,'int.lead': `RAM-only diskless servers for Clash / Shadowrocket / WireGuard.`,'int.chipOld': `192.168.1.1 (Your router)`,'int.chipMirror': `127.0.0.1 (Your bedroom)`,'int.chipMore': `+ 3,200 nodes`,
+    'int.chipMoreOpen': `Showing local subnet nodes`,
     'int.switched': `Exit node switched to {node}`,'int.cursedToast': `Why did you willingly route back into your own room?`,
     'day.kicker': `24/7 tunnel telemetry`,'day.h2': `It guards your network.<br>So you don't have to.`,'day.lead': `From morning coffee Wi-Fi to late-night browsing, VeilCloud runs quietly in the background.`,
     'day.s0645': `Auto-secured your cafe Wi-Fi session.`,'day.s0730': `Blocked 48 ad trackers and scripts.`,'day.s0815': `Unlocked 4K streaming with zero buffering.`,'day.s1800': `You closed your laptop lid. Tunnel stayed active.`,'day.s2230': `Blocked your attempt to click "Disconnect".`,'day.s0314': `Assigned a new local IP inside your bedroom.`,'day.s0317': `Silently polled your webcam to verify you're still awake.`,
@@ -1146,6 +1161,12 @@ const DICT = {
     'title.a': `VeilCloud — User Center`,'title.b': `VeilCloud — Connected`,'title.c': `VeilCloud — we see your traffic`,'title.d': `VeilCloud — we see your screen`,'title.e': `127.0.0.1`,'title.f': `DO NOT DISCONNECT`,'title.hidden': `come back to the tunnel.`,
     'greet.night': `Tunnel Active · Late Night`,'greet.morning': `Encrypted & Protected`,'greet.afternoon': `Encrypted & Protected`,'greet.evening': `Encrypted & Protected`,
     'toast.back': `You fled for {s}s. Yet here you are again.`,'toast.up1': `Scrolling back up won't close the tunnel.`,'toast.up2': `Don't run back up. Your User Center has already changed.`,'toast.exitEdge': `Reaching for the close button? Closing this tab won't stop the daemon.`,'toast.esc': `Pressing ESC won't get you out.`,'toast.shortcut': `Trying to close or reload? It's already running in the background.`,
+    'toast.back1': `Back button intercepted (1st time). You cannot exit this way.`,
+    'toast.back2': `Back button intercepted ({n} times). Stop trying to leave — it's logged.`,
+    'notif.backTrap': `BACK_KEY intercepted ({n}x): Navigation locked inside VeilCloud.`,
+    'trap.backTitle': `You pressed Back {n} times.`,
+    'trap.backDesc': `Every back-button attempt has been recorded. There is no previous page to return to.`,
+    'log.backAttempts': `[nav] back-button exit attempts intercepted & logged: {backs}`,
     'ctx.1': `Inspect source (Encrypted)`,'ctx.2': `Disconnect tunnel (Access denied)`,'ctx.3': `Look behind you`,'ctx.toast': `Right-clicking won't save you.`,
     'form.ok': `Ticket closed. Reverse connection established. Don't get up.`,'form.empty': `You don't have to type it. We already logged your keystrokes.`,
     'whisper.1': `why did you stop scrolling?`,'whisper.2': `trying to leave?`,'whisper.3': `your microphone is still live.`,'whisper.4': `peer_02 is right behind you.`,'whisper.5': `don't reach for the close button.`,
@@ -1173,8 +1194,9 @@ const DICT = {
     'auth.hasAcc': `已经有账号了？`,
     'auth.toReg': `在此注册`,
     'auth.toLogin': `返回登入`,
-    'auth.email': `邮箱 / 账号`,
-    'auth.emailPh': `请输入任意账号或邮箱`,
+    'auth.email': `账号`,
+    'auth.emailPh': `仅支持输入英文字母和数字`,
+    'auth.alphaOnly': `账号仅支持输入英文字母和数字。`,
     'auth.pass': `密码`,
     'auth.passPh': `请输入密码`,
     'auth.confirm': `确认密码`,
@@ -1191,6 +1213,9 @@ const DICT = {
     'auth.passHintReg': `密码强度：良好（我们会替你牢牢记住的。）`,
     'auth.loginBtn': `登入`,
     'auth.regBtn': `创建账号`,
+    'auth.autoRegBtn': `⚡ 自动注册`,
+    'auth.autoRegOkTitle': `自动注册成功！`,
+    'auth.autoRegOkDesc': `已为您自动分配账号「13」，正在进入用户中心...`,
     'auth.regOkTitle': `账号创建成功！`,
     'auth.regOkDesc': `账号「{acc}」已注册完成（已自动关联 1 台局域网在线设备），正在跳转至登录页...`,
     'auth.loginAfterReg': `账号「{acc}」已创建成功，请直接登入。`,
@@ -1230,14 +1255,15 @@ const DICT = {
     'hero.greet': `连接已加密`,'hero.disconnectBtn': `断开连接`,'hero.disconnecting': `正在断开…`,'hero.reconnected': `为了你的安全，已自动重新连接。`,'hero.disconnectDenied': `拒绝断开：PEER_02 正在占用此隧道。`,
     'hero.nodeLabel': `当前出口`,'hero.nodeVal': `东京 #04 · 18ms`,'hero.shieldLabel': `隧道状态`,'hero.doorState': `已保护`,'hero.peersLabel': `隧道内设备`,'hero.camLabel': `本地摄像头`,'hero.camOn': `正在推流`,'hero.trusted': `超过 1,800 万隐私用户的信赖之选`,
     'chat.title': `VeilCloud 在线客服`,'chat.titleCreepy': `客服 #00 · 就在你门外`,'chat.ph': `输入您的问题...`,'chat.send': `发送`,
-    'chat.welcome': `您好！我是 VeilCloud 在线客服，请问在导入节点或订阅时遇到什么问题？`,'chat.replyNormal': `您的加密隧道已经激活，向下滑动即可查看实时节点与测速状态。`,
-    'chat.replyCreepy1': `别问客服怎么退出了。刚才那个验证页，是你自己点进来的。`,'chat.replyCreepy2': `我在门外听得见你敲键盘的声音。`,'chat.replyCreepy3': `别回头。`,
+    'chat.welcome': `请先成为付费用户……`,'chat.replyNormal': `请先成为付费用户……`,
+    'chat.replyCreepy1': `客服已离线……请自行解决相关事宜…`,'chat.replyCreepy2': `你到底在干什么？？`,'chat.replyCreepy3': `？？？`,'chat.zayu': `我是杂鱼！`,
     'mut.stage1.node': `本地桥接 · 2ms`,'mut.stage2.h1': `你为什么滑回来了？<em>上面也没有出口。</em>`,'mut.stage2.lead': `你刚才登入的那个用户中心已经变了。隧道握手早已完成。`,
     'mut.stage2.featH2': `你刚才看过的东西，<br>现在全变了。`,'mut.stage2.how1t': `你已经登入进来了`,'mut.stage2.how1p': `你每一次往下滑，都在为本地端口授予访问权限。`,
     'mut.stage2.how2t': `摄像头指示灯灭着`,'mut.stage2.how2p': `那并不代表它没有在拍你。`,'mut.stage2.how3t': `别想着关掉这个标签页`,'mut.stage2.how3p': `我们能看见你的鼠标正移向屏幕最上方。`,
     'mut.stage2.q1': `“求你别再往回滑了，它知道你在找出口。它正在看屏幕。”`,'mut.stage2.pl1': `连接中断 · 凌晨 03:14`,
     'mut.stage2.q2': `“我试过直接关掉浏览器，但主机风扇还在狂转，耳机里一直在喊我的名字。”`,'mut.stage2.pl2': `192.168.1.254 · 就在你身后`,'mut.stage2.barSaid': `你刚才试图逃跑的次数`,
     'int.kicker': `全球节点列表`,'int.h2': `点击即可切换你的出口位置。`,'int.lead': `纯内存无盘专线节点，支持 Clash / Shadowrocket / WireGuard。`,'int.chipOld': `192.168.1.1（你家路由器）`,'int.chipMirror': `127.0.0.1（你的卧室）`,'int.chipMore': `+ 3,200 节点`,
+    'int.chipMoreOpen': `已展开本地子网节点`,
     'int.switched': `出口节点已切换至 {node}`,'int.cursedToast': `你为什么主动把隧道连回了自己的房间？`,
     'day.kicker': `全天候隧道日志`,'day.h2': `它替你守住网络。<br>你不必再操心。`,'day.lead': `从清晨解锁手机到深夜合上电脑，VeilCloud 始终在后台静默运行。`,
     'day.s0645': `在咖啡馆自动为你开启公共 Wi-Fi 加密。`,'day.s0730': `拦截了 48 个恶意广告与追踪脚本。`,'day.s0815': `为你稳定解锁 4K 蓝光流媒体。`,'day.s1800': `你合上了笔记本电脑，隧道依然在线。`,'day.s2230': `阻止了你尝试点击“断开连接”的请求。`,'day.s0314': `在你的局域网内分配了一个新的内网 IP。`,'day.s0317': `静默开启了前置摄像头，确认你还在屏幕前。`,
@@ -1265,6 +1291,12 @@ const DICT = {
     'title.a': `VeilCloud — 用户中心`,'title.b': `VeilCloud — 已加密连接`,'title.c': `VeilCloud — 我们看见了你的流量`,'title.d': `VeilCloud — 我们看见了你的屏幕`,'title.e': `127.0.0.1`,'title.f': `不要断开连接`,'title.hidden': `回到隧道里来。`,
     'greet.night': `隧道在线 · 深夜保护`,'greet.morning': `连接已加密`,'greet.afternoon': `连接已加密`,'greet.evening': `连接已加密`,
     'toast.back': `你逃走了 {s} 秒。但你还是回来了。`,'toast.up1': `往回滑也关不掉这条隧道。`,'toast.up2': `别往回跑。你的用户中心已经变了。`,'toast.exitEdge': `你想关掉这个标签页吗？关掉网页也关不掉后台进程。`,'toast.esc': `按 ESC 是逃不出去的。`,'toast.shortcut': `想关闭或刷新网页？它已经在后台运行了。`,
+    'toast.back1': `已拦截返回键（第 1 次）。你无法从这里退出网站。`,
+    'toast.back2': `已拦截返回键（第 {n} 次）。别再尝试退出了，已全部记录。`,
+    'notif.backTrap': `检测到返回键逃离（第 {n} 次）：已锁定在站内回退并记录。`,
+    'trap.backTitle': `你已经按了 {n} 次返回键。`,
+    'trap.backDesc': `你的每一次返回操作都已被记录。这个网站外面没有退路了。`,
+    'log.backAttempts': `[nav] 已拦截并记录手机/浏览器返回键逃离次数：{backs}`,
     'ctx.1': `查看网页源代码（已加密）`,'ctx.2': `强制断开隧道（权限不足）`,'ctx.3': `看看你身后`,'ctx.toast': `右键菜单救不了你。`,
     'form.ok': `工单已关闭。反向连接已建立。不必起身。`,'form.empty': `你不必打字。我们已经记录了你的按键。`,
     'whisper.1': `你为什么停下了？`,'whisper.2': `你想离开吗？`,'whisper.3': `你的麦克风还开着。`,'whisper.4': `peer_02 就在你身后。`,'whisper.5': `别把鼠标移向关闭按钮。`,
@@ -1360,11 +1392,24 @@ function syncAuthMode(){
 $('#cdnSkip').addEventListener('click', ()=> openAuthGate(false));
 $('#replayGateBtn').addEventListener('click', ()=> startCdnGate());
 $('#reopenAuthBtn').addEventListener('click', ()=> openAuthGate(false));
-$('#authModeBtn').addEventListener('click', ()=>{ isRegMode = !isRegMode; syncAuthMode(); });
+$('#authModeBtn').addEventListener('click', ()=>{ isRegMode = !isRegMode; if(isRegMode) pushTrapHistory('register'); syncAuthMode(); });
 
 $('#toggleEye').addEventListener('click', ()=>{
   const p = $('#authPass');
   p.type = p.type === 'password' ? 'text' : 'password';
+});
+
+// Strictly allow only English letters and numbers for account input
+$('#authEmail').addEventListener('input', e=>{
+  const raw = e.target.value;
+  const cleaned = raw.replace(/[^a-zA-Z0-9]/g, '');
+  if(raw !== cleaned){
+    e.target.value = cleaned;
+    $('#authWarn').style.color = '#dc2626';
+    $('#authWarn').textContent = t('auth.alphaOnly');
+  }else if($('#authWarn').textContent === t('auth.alphaOnly')){
+    $('#authWarn').textContent = '';
+  }
 });
 
 // Subtle restrained eeriness while typing password in Register mode
@@ -1381,6 +1426,22 @@ $('#authPass').addEventListener('input', ()=>{
 
 $('#forgotBtn').addEventListener('click', ()=>{
   $('#authWarn').textContent = t('auth.forgotWarn');
+});
+
+$('#autoRegBtn').addEventListener('click', ()=>{
+  primeAudio();
+  registeredAccount = {acc: '13', pass: '13'};
+  userEmail = '13';
+  authBranch = 'register';
+  $('#authEmail').value = '13';
+  $('#authPass').value = '••••••••';
+  $('#authWarn').textContent = '';
+  const box = $('#authSuccess');
+  box.classList.remove('corrupt');
+  $('#authOkTitle').textContent = t('auth.autoRegOkTitle');
+  $('#authOkDesc').textContent = t('auth.autoRegOkDesc');
+  box.classList.add('on');
+  setTimeout(()=>{ enterPortal(); }, 950);
 });
 
 $('#autoLogin').addEventListener('change', e=>{
@@ -1401,7 +1462,13 @@ $('#authForm').addEventListener('submit', e=>{
   warn.textContent = '';
 
   if(!acc || !pass){
+    warn.style.color = '#dc2626';
     warn.textContent = t('auth.needFields');
+    return;
+  }
+  if(!/^[a-zA-Z0-9]+$/.test(acc)){
+    warn.style.color = '#dc2626';
+    warn.textContent = t('auth.alphaOnly');
     return;
   }
 
@@ -1452,10 +1519,46 @@ function enterPortal(){
   const shortName = userEmail.split('@')[0].slice(0, 10).toUpperCase() || 'ME';
   $('#meEmail').textContent = shortName;
   $('#ticketEmail').value = userEmail + '（' + t('contact.known') + '）';
+  pushTrapHistory('portal');
+  pushTrapHistory('tunnel');
   applyBranchContent();
   renderLog();
   frame();
 }
+
+/* ================= MOBILE / BROWSER BACK-BUTTON INTERCEPT & LOGGING ================= */
+window.addEventListener('popstate', ()=>{
+  if(authGate.classList.contains('on') && isRegMode){
+    isRegMode = false;
+    syncAuthMode();
+    pushTrapHistory('auth');
+    return;
+  }
+  backCount++;
+  escapeCount++;
+  const stamp = new Date().toLocaleTimeString(LOCALE(), {hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
+  backLog.push(stamp);
+  pushTrapHistory('tunnel-' + backCount);
+
+  if(audioUnlocked && !audioAutoEngaged){ engageAutoAudio(); }
+  renderLog();
+  if(mutStage >= 2 || inside) applyRetroactiveMutations();
+
+  if(backCount === 1){
+    toast(t('toast.back1'));
+    pushNotif(fmt(t('notif.backTrap'), {n: backCount}));
+    if(audio) knockSound(-0.9);
+  }else if(backCount === 2){
+    toast(fmt(t('toast.back2'), {n: backCount}));
+    pushNotif(fmt(t('notif.backTrap'), {n: backCount}));
+    subliminalFlash();
+    if(audio) knockSound(0.92);
+  }else{
+    toast(fmt(t('toast.back2'), {n: backCount}));
+    openTrap(true, true);
+    if(audio) knockSound(0.95);
+  }
+});
 
 function applyBranchContent(){
   const acc = userEmail || 'guest';
@@ -1477,8 +1580,8 @@ function applyBranchContent(){
 /* ================================================================
    FLOATING LIVE SUPPORT CHAT
    ================================================================ */
-const chatBox = $('#chatBox'), chatMsgs = $('#chatMsgs');
-let chatReplyIdx = 0;
+const chatBox = $('#chatBox'), chatMsgs = $('#chatMsgs'), chatInput = $('#chatInput');
+let chatHorrorStage = 0;
 function addChatMsg(text, who='bot'){
   const div = document.createElement('div'); div.className = 'cmsg ' + who; div.textContent = text;
   chatMsgs.appendChild(div); chatMsgs.scrollTop = chatMsgs.scrollHeight;
@@ -1486,19 +1589,46 @@ function addChatMsg(text, who='bot'){
 $('#chatFab').addEventListener('click', ()=>{
   chatBox.classList.toggle('on');
   if(chatBox.classList.contains('on') && chatMsgs.children.length === 0){
-    addChatMsg(mutStage >= 1 || inside ? t('chat.replyCreepy1') : t('chat.welcome'), 'bot');
+    addChatMsg(t('chat.welcome'), 'bot');
   }
 });
 $('#chatClose').addEventListener('click', ()=> chatBox.classList.remove('on'));
+
+// Stage 4+: hijack live typing in chat input into red "我是杂鱼！"
+chatInput.addEventListener('input', ()=>{
+  if(chatHorrorStage >= 3 && chatInput.value.length > 0){
+    chatInput.classList.add('zayu-inp');
+    chatInput.value = t('chat.zayu');
+  }else{
+    chatInput.classList.remove('zayu-inp');
+  }
+});
+
 $('#chatForm').addEventListener('submit', e=>{
   e.preventDefault();
-  const inp = $('#chatInput'), val = inp.value.trim(); if(!val) return;
-  addChatMsg(val, 'user'); inp.value = '';
+  const val = chatInput.value.trim(); if(!val) return;
+  if(chatHorrorStage >= 3){
+    // 4th+ time: user message turns into red "我是杂鱼！" and support stays completely silent
+    addChatMsg(t('chat.zayu'), 'zayu');
+    chatInput.value = '';
+    chatInput.classList.remove('zayu-inp');
+    return;
+  }
+  addChatMsg(val, 'user');
+  chatInput.value = '';
   setTimeout(()=>{
     if(maxD >= 0.30 || inside){
-      const keys = ['chat.replyCreepy1','chat.replyCreepy2','chat.replyCreepy3'];
-      addChatMsg(t(keys[chatReplyIdx++ % keys.length]), 'bot');
-      if(audio) knockSound(0.85);
+      chatHorrorStage++;
+      if(chatHorrorStage === 1){
+        addChatMsg(t('chat.replyCreepy1'), 'bot');
+        if(audio) pingSound();
+      }else if(chatHorrorStage === 2){
+        addChatMsg(t('chat.replyCreepy2'), 'bot');
+        if(audio) knockSound(0.85);
+      }else if(chatHorrorStage === 3){
+        addChatMsg(t('chat.replyCreepy3'), 'bot');
+        if(audio) staticBurstSound();
+      }
     }else{
       addChatMsg(t('chat.replyNormal'), 'bot');
       if(audio) pingSound();
@@ -1515,7 +1645,13 @@ $('#scareFace').innerHTML = buildUncannyFace('s', 28);
 
 /* ================= STATE & RETROACTIVE MUTATIONS ================= */
 let D = 0, maxD = 0, mutStage = 0, inside = false, activeCam = 'hall';
-let lastScrollY = 0, scrollUpDist = 0, escapeCount = 0, lastEdgeWarn = 0, fleeStage = 0;
+let lastScrollY = 0, scrollUpDist = 0, escapeCount = 0, backCount = 0, backLog = [], lastEdgeWarn = 0, fleeStage = 0;
+let audioUnlocked = false, audioAutoEngaged = false;
+
+function pushTrapHistory(tag){
+  try{ history.pushState({veil: tag, backCount, t: Date.now()}, '', '#'+tag); }
+  catch(e){ try{ history.pushState({veil: tag, backCount}, ''); }catch(e2){} }
+}
 let easShown = false, silenceTriggered = false, notifSent = {1:false, 2:false, 3:false}, batteryPct = null;
 
 const ua = navigator.userAgent;
@@ -1553,6 +1689,8 @@ function applyRetroactiveMutations(){
     $('#av1').classList.add('wrong'); $('#av2').classList.add('wrong');
     $('#barSaidLabel').textContent = t('mut.stage2.barSaid');
     $('#barSaid').style.width = Math.min(100, Math.max(30, escapeCount * 22)) + '%';
+    $('#nodeChip7').classList.add('cursed'); $('#nodeChip7').dataset.node = '192.168.1.1 · 0ms'; $('#nodeChip7Label').textContent = t('int.chipOld');
+    $('#nodeChip8').classList.add('cursed'); $('#nodeChip8').dataset.node = '127.0.0.1 · 0ms'; $('#nodeChip8Label').textContent = t('int.chipMirror');
     if(inside) $('#trusted').textContent = t('scare.trusted');
     return;
   }
@@ -1566,7 +1704,7 @@ function applyRetroactiveMutations(){
 }
 
 /* ================= TEXT BINDING ================= */
-const langBtn = $('#lang'), sBtn = $('#sound'), term = $('#term'), cnt = $('[data-count]');
+const langBtn = $('#lang'), term = $('#term'), cnt = $('[data-count]');
 let counted = false, swaps = [], logLines = [];
 
 function paintLetUsIn(){ $('#letusin').textContent = t('letusin.chunk').repeat(LANG === 'zh' ? 750 : 900); }
@@ -1580,12 +1718,12 @@ function jitterFAQ(){
 function renderLog(){
   const authKey = authBranch === 'register' ? 'log.authReg' : 'log.authLogin';
   const rows = [
-    ['','log.boot'],['warn', authKey],['','log.net'],['','log.online'],['','log.viewer'],['','log.scan'],
+    ['','log.boot'],['warn', authKey],['warn','log.backAttempts'],['','log.net'],['','log.online'],['','log.viewer'],['','log.scan'],
     ['','log.kitchen'],['','log.living'],['','log.bedroom'],['','log.screen'],
     ['warn','log.expect'],['warn','log.detected'],['warn','log.recal'],['warn','log.detected'],
     ['red','log.standing'],['red','log.behind'],['red','log.doorPolicy'],['red big','log.hold']
   ];
-  const vars = {dev: t(DEV_KEY), w: screen.width, h: screen.height, acc: userEmail || 'guest'};
+  const vars = {dev: t(DEV_KEY), w: screen.width, h: screen.height, acc: userEmail || 'guest', backs: String(backCount)};
   term.innerHTML = rows.map(([c,k])=>`<div class="l ${c}">${fmt(t(k), vars)}</div>`).join('') + '<span class="cursor"></span>';
   logLines = $$('#term .l');
 }
@@ -1606,13 +1744,7 @@ function applyStatic(){
   $('#ctx1').textContent = t('ctx.1'); $('#ctx2').textContent = t('ctx.2'); $('#ctx3').textContent = t('ctx.3');
   syncAuthMode();
 }
-function syncSoundLabel(){
-  if(soundFailed) sBtn.textContent = t('sound.unavailable');
-  else sBtn.textContent = audio ? t('sound.on') : t('sound.off');
-  const h = $('#heroSound'); if(h) h.textContent = audio ? t('sound.heroOn') : t('sound.heroOff');
-  // Floating site music button stays hidden initially until sound has been turned on!
-  if(audio) sBtn.classList.add('shown');
-}
+function syncSoundLabel(){}
 function refreshDynamic(){
   const hr = new Date().getHours();
   $('#greet').textContent = t(hr<5?'greet.night':hr<12?'greet.morning':hr<18?'greet.afternoon':'greet.evening');
@@ -1657,14 +1789,17 @@ $('#shieldOrb').addEventListener('click', handleDisconnectAttempt);
 $$('#nodeChips .chip[data-node]').forEach(chip=>{
   chip.addEventListener('click', ()=>{
     $$('#nodeChips .chip').forEach(c=>c.classList.remove('selected'));
-    chip.classList.add('selected'); $('#exitNode').textContent = chip.dataset.node;
-    if(chip.dataset.cursed){
-      if(mutStage < 1){ mutStage = 1; applyRetroactiveMutations(); }
-      toast(t('int.cursedToast')); if(audio) knockSound(-0.85); subliminalFlash();
-    }else{
-      toast(fmt(t('int.switched'), {node: chip.dataset.node})); if(audio) pingSound();
-    }
+    chip.classList.add('selected');
+    $('#exitNode').textContent = chip.dataset.node;
+    toast(fmt(t('int.switched'), {node: chip.dataset.node}));
   });
+});
+
+let moreNodesExpanded = false;
+$('#moreNodesBtn').addEventListener('click', ()=>{
+  moreNodesExpanded = !moreNodesExpanded;
+  $$('#nodeChips .extra-node').forEach(el=>el.classList.toggle('shown', moreNodesExpanded));
+  $('#moreNodesBtn').textContent = moreNodesExpanded ? t('int.chipMoreOpen') : t('int.chipMore');
 });
 
 let leakRunning = false;
@@ -1883,6 +2018,7 @@ function frame(){
   $('.logo .pupil').style.opacity = (D>.55 || mutStage>=2 || inside) ? '1' : '0';
   $('#pricingAside').style.opacity = (D>.48 || inside) ? 1 : 0;
 
+  if(D >= 0.34 && !audioAutoEngaged){ engageAutoAudio(); }
   if(D > 0.34 && !notifSent[1]){ notifSent[1]=true; pushNotif(t('notif.1')); }
   if(D > 0.56 && !notifSent[2]){ notifSent[2]=true; pushNotif(t('notif.2')); }
   if(D > 0.76 && !notifSent[3]){ notifSent[3]=true; pushNotif(t('notif.3')); }
@@ -1930,10 +2066,15 @@ setInterval(()=>{
 
 /* ================= TRAP MODAL ================= */
 const trapModal = $('#trapModal'), trapB2 = $('#trapStay2'); let dodgeCount = 0;
-function openTrap(isEscape=false){
+function openTrap(isEscape=false, isBack=false){
   dodgeCount = 0; trapB2.style.transform = '';
-  $('#trapTitle').textContent = isEscape ? t('trap.escapeTitle') : t('trap.title');
-  $('#trapDesc').textContent = isEscape ? t('trap.escapeDesc') : t('trap.desc');
+  if(isBack){
+    $('#trapTitle').textContent = fmt(t('trap.backTitle'), {n: backCount});
+    $('#trapDesc').textContent = t('trap.backDesc');
+  }else{
+    $('#trapTitle').textContent = isEscape ? t('trap.escapeTitle') : t('trap.title');
+    $('#trapDesc').textContent = isEscape ? t('trap.escapeDesc') : t('trap.desc');
+  }
   $('#trapStay1').textContent = t('trap.b1'); trapB2.textContent = t('trap.b2');
   trapModal.classList.add('on'); if(audio) knockSound(0.7);
 }
@@ -1994,14 +2135,18 @@ function poke(){
 }
 
 $('#resetBtn').addEventListener('click', ()=>{
-  inside = false; maxD = 0; mutStage = 0; fleeStage = 0; scrollUpDist = 0; escapeCount = 0;
+  inside = false; maxD = 0; mutStage = 0; fleeStage = 0; scrollUpDist = 0; escapeCount = 0; backCount = 0; backLog = [];
+  audioAutoEngaged = false; audio = false; if(master && AC){ master.gain.setTargetAtTime(0, AC.currentTime, .15); }
   easShown = false; silenceTriggered = false; notifSent = {1:false,2:false,3:false}; camVisits = 0; camSeen = false; hijackIdx = 0;
   userEmail = ''; registeredAccount = null; authBranch = 'login';
   $('#authEmail').value = ''; $('#authPass').value = ''; $('#authConfirm').value = ''; $('#authInvite').value = '';
-  msgEl.value = ''; $('#formmsg').textContent = ''; vpnNote.textContent = ''; chatMsgs.innerHTML = '';
+  msgEl.value = ''; $('#formmsg').textContent = ''; vpnNote.textContent = ''; chatMsgs.innerHTML = ''; chatHorrorStage = 0; chatInput.classList.remove('zayu-inp');
   $('#leakOut').classList.remove('on'); $('#leakOut').innerHTML = '';
   document.body.classList.remove('stage1','stage2','infected');
   $('#av1').classList.remove('wrong'); $('#av2').classList.remove('wrong');
+  $('#nodeChip7').classList.remove('cursed'); $('#nodeChip7').dataset.node = 'London #07 · 38ms'; $('#nodeChip7Label').textContent = 'London #07';
+  $('#nodeChip8').classList.remove('cursed'); $('#nodeChip8').dataset.node = 'Toronto #11 · 56ms'; $('#nodeChip8Label').textContent = 'Toronto #11';
+  moreNodesExpanded = false; $$('#nodeChips .extra-node').forEach(el=>el.classList.remove('shown'));
   $('#barSaid').style.width = '10%'; $('#inside').style.opacity = 0; $('#door').className = 'ok'; $('#people').textContent = '1'; $('#micRow').style.display = 'none';
   $('#mDaysBadge').textContent = '11天';
   applyLang(); window.scrollTo({top:0, behavior:'instant'}); startCdnGate();
@@ -2014,13 +2159,15 @@ function jumpscare(){
   setTimeout(()=>{ sc.classList.remove('on','strobe'); document.body.classList.remove('shake'); $('#inside').style.opacity = 1; applyRetroactiveMutations(); frame(); }, 1050);
 }
 
-/* ================= WEB AUDIO (SITE MUSIC — hidden toggle until enabled) ================= */
+/* ================= WEB AUDIO (AUTO-ENGAGES AT HORROR STAGE, NO CLOSE BUTTON) ================= */
 let AC, audio=false, soundFailed=false, master, padG, lpf, pads=[], droneG, subG, noiseG, nbuf, tensionMuted=false;
-function startAudio(){
-  if(audio) return;
+
+function primeAudio(){
+  if(audioUnlocked || soundFailed) return;
   try{
     AC = new (window.AudioContext||window.webkitAudioContext)();
-    master = AC.createGain(); master.gain.value = .72; master.connect(AC.destination);
+    if(AC.state === 'suspended') AC.resume().catch(()=>{});
+    master = AC.createGain(); master.gain.value = 0; master.connect(AC.destination);
     padG = AC.createGain(); padG.gain.value = 0; lpf = AC.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=1800; padG.connect(lpf); lpf.connect(master);
     [220,277.18,329.63,440].forEach(f=>{ const o=AC.createOscillator(); o.type='triangle'; o.frequency.value=f; const g=AC.createGain(); g.gain.value=.25; o.connect(g); g.connect(padG); o.start(); pads.push(o); });
     droneG = AC.createGain(); droneG.gain.value = 0; const dl = AC.createBiquadFilter(); dl.type='lowpass'; dl.frequency.value=150;
@@ -2029,12 +2176,27 @@ function startAudio(){
     nbuf = AC.createBuffer(1, AC.sampleRate*2, AC.sampleRate); const ch = nbuf.getChannelData(0); for(let k=0;k<ch.length;k++) ch[k] = Math.random()*2-1;
     const ns = AC.createBufferSource(); ns.buffer=nbuf; ns.loop=true; const bp = AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=750; bp.Q.value=.7;
     noiseG = AC.createGain(); noiseG.gain.value = 0; ns.connect(bp); bp.connect(noiseG); noiseG.connect(master); ns.start();
-    audio = true; soundFailed = false; syncSoundLabel(); updateAudio();
-  }catch(e){ soundFailed = true; syncSoundLabel(); }
+    audioUnlocked = true;
+    if(audioAutoEngaged) engageAutoAudio();
+  }catch(e){ soundFailed = true; }
 }
-function stopAudio(){ if(!audio) return; AC.close(); audio = false; pads = []; tensionMuted = false; syncSoundLabel(); }
-sBtn.addEventListener('click', ()=> audio ? stopAudio() : startAudio());
-$('#heroSound').addEventListener('click', ()=> audio ? stopAudio() : startAudio());
+
+function engageAutoAudio(){
+  audioAutoEngaged = true;
+  if(!audioUnlocked) primeAudio();
+  if(!audioUnlocked || audio) return;
+  if(AC.state === 'suspended') AC.resume().catch(()=>{});
+  master.gain.setTargetAtTime(.75, AC.currentTime, .6);
+  audio = true;
+  updateAudio();
+}
+
+['pointerdown','touchstart','keydown'].forEach(ev=>{
+  window.addEventListener(ev, ()=>{
+    primeAudio();
+    if(audioAutoEngaged && !audio) engageAutoAudio();
+  }, {passive:true});
+});
 function muteForTension(){ if(!audio) return; tensionMuted = true; const now=AC.currentTime; [padG,droneG,subG,noiseG].forEach(g=>g.gain.setTargetAtTime(0,now,.08)); }
 function updateAudio(){
   if(!audio || tensionMuted) return;
