@@ -1161,7 +1161,8 @@ const DICT = {
     'title.a': `VeilCloud — User Center`,'title.b': `VeilCloud — Connected`,'title.c': `VeilCloud — we see your traffic`,'title.d': `VeilCloud — we see your screen`,'title.e': `127.0.0.1`,'title.f': `DO NOT DISCONNECT`,'title.hidden': `come back to the tunnel.`,
     'greet.night': `Tunnel Active · Late Night`,'greet.morning': `Encrypted & Protected`,'greet.afternoon': `Encrypted & Protected`,'greet.evening': `Encrypted & Protected`,
     'toast.back': `You fled for {s}s. Yet here you are again.`,'toast.up1': `Scrolling back up won't close the tunnel.`,'toast.up2': `Don't run back up. Your User Center has already changed.`,'toast.exitEdge': `Reaching for the close button? Closing this tab won't stop the daemon.`,'toast.esc': `Pressing ESC won't get you out.`,'toast.shortcut': `Trying to close or reload? It's already running in the background.`,
-    'toast.back1': `Back button intercepted (1st time). You cannot exit this way.`,
+    'toast.back1': `Back button intercepted — pulling you deeper. No going back up.`,
+    'toast.noUp': `No turning back. You can only go down now.`,
     'toast.back2': `Back button intercepted ({n} times). Stop trying to leave — it's logged.`,
     'notif.backTrap': `BACK_KEY intercepted ({n}x): Navigation locked inside VeilCloud.`,
     'trap.backTitle': `You pressed Back {n} times.`,
@@ -1291,7 +1292,8 @@ const DICT = {
     'title.a': `VeilCloud — 用户中心`,'title.b': `VeilCloud — 已加密连接`,'title.c': `VeilCloud — 我们看见了你的流量`,'title.d': `VeilCloud — 我们看见了你的屏幕`,'title.e': `127.0.0.1`,'title.f': `不要断开连接`,'title.hidden': `回到隧道里来。`,
     'greet.night': `隧道在线 · 深夜保护`,'greet.morning': `连接已加密`,'greet.afternoon': `连接已加密`,'greet.evening': `连接已加密`,
     'toast.back': `你逃走了 {s} 秒。但你还是回来了。`,'toast.up1': `往回滑也关不掉这条隧道。`,'toast.up2': `别往回跑。你的用户中心已经变了。`,'toast.exitEdge': `你想关掉这个标签页吗？关掉网页也关不掉后台进程。`,'toast.esc': `按 ESC 是逃不出去的。`,'toast.shortcut': `想关闭或刷新网页？它已经在后台运行了。`,
-    'toast.back1': `已拦截返回键（第 1 次）。你无法从这里退出网站。`,
+    'toast.back1': `已拦截返回键——正在把你拉向更深处，现在不允许往回走了。`,
+    'toast.noUp': `没有回头路了。现在只能往下走。`,
     'toast.back2': `已拦截返回键（第 {n} 次）。别再尝试退出了，已全部记录。`,
     'notif.backTrap': `检测到返回键逃离（第 {n} 次）：已锁定在站内回退并记录。`,
     'trap.backTitle': `你已经按了 {n} 次返回键。`,
@@ -1519,26 +1521,33 @@ function enterPortal(){
   const shortName = userEmail.split('@')[0].slice(0, 10).toUpperCase() || 'ME';
   $('#meEmail').textContent = shortName;
   $('#ticketEmail').value = userEmail + '（' + t('contact.known') + '）';
-  pushTrapHistory('portal');
-  pushTrapHistory('tunnel');
+  pushTrapHistory('portal', 3);
   applyBranchContent();
   renderLog();
   frame();
 }
 
-/* ================= MOBILE / BROWSER BACK-BUTTON INTERCEPT & LOGGING ================= */
+/* ================= MOBILE / BROWSER BACK-BUTTON: PULL DOWNWARD & LOCK UPWARD SCROLL ================= */
 window.addEventListener('popstate', ()=>{
   if(authGate.classList.contains('on') && isRegMode){
     isRegMode = false;
     syncAuthMode();
-    pushTrapHistory('auth');
+    pushTrapHistory('auth', 2);
     return;
   }
+  // Immediately replenish 2 guard states so a 2nd/3rd Back press NEVER exits the site
   backCount++;
   escapeCount++;
   const stamp = new Date().toLocaleTimeString(LOCALE(), {hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
   backLog.push(stamp);
-  pushTrapHistory('tunnel-' + backCount);
+  pushTrapHistory('tunnel-' + backCount, 2);
+
+  // Engage downward pull & lock upward scrolling!
+  noReturnLocked = true;
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
+  const targetY = Math.min(maxScroll, Math.max(scrollY, minAllowedScrollY) + Math.max(Math.round(innerHeight * 0.95), 720));
+  minAllowedScrollY = targetY;
+  window.scrollTo({top: targetY, behavior: 'smooth'});
 
   if(audioUnlocked && !audioAutoEngaged){ engageAutoAudio(); }
   renderLog();
@@ -1559,6 +1568,30 @@ window.addEventListener('popstate', ()=>{
     if(audio) knockSound(0.95);
   }
 });
+
+// Enforce one-way downward scroll once noReturnLocked is active
+window.addEventListener('scroll', ()=>{
+  if(!noReturnLocked) return;
+  if(scrollY > minAllowedScrollY){
+    minAllowedScrollY = scrollY;
+  }else if(scrollY < minAllowedScrollY - 4){
+    window.scrollTo(0, minAllowedScrollY);
+    if(Date.now() - lastLockToast > 2600){
+      lastLockToast = Date.now();
+      toast(t('toast.noUp'));
+    }
+  }
+}, {passive:true});
+
+window.addEventListener('wheel', e=>{
+  if(noReturnLocked && e.deltaY < 0){
+    e.preventDefault();
+    if(Date.now() - lastLockToast > 2600){
+      lastLockToast = Date.now();
+      toast(t('toast.noUp'));
+    }
+  }
+}, {passive:false});
 
 function applyBranchContent(){
   const acc = userEmail || 'guest';
@@ -1646,11 +1679,16 @@ $('#scareFace').innerHTML = buildUncannyFace('s', 28);
 /* ================= STATE & RETROACTIVE MUTATIONS ================= */
 let D = 0, maxD = 0, mutStage = 0, inside = false, activeCam = 'hall';
 let lastScrollY = 0, scrollUpDist = 0, escapeCount = 0, backCount = 0, backLog = [], lastEdgeWarn = 0, fleeStage = 0;
+let noReturnLocked = false, minAllowedScrollY = 0, lastLockToast = 0;
 let audioUnlocked = false, audioAutoEngaged = false;
 
-function pushTrapHistory(tag){
-  try{ history.pushState({veil: tag, backCount, t: Date.now()}, '', '#'+tag); }
-  catch(e){ try{ history.pushState({veil: tag, backCount}, ''); }catch(e2){} }
+try{ if('scrollRestoration' in history) history.scrollRestoration = 'manual'; }catch(e){}
+
+function pushTrapHistory(tag, count=1){
+  for(let i=0;i<count;i++){
+    try{ history.pushState({veil: tag, backCount, i, t: Date.now()}, '', location.href); }
+    catch(e){ try{ history.pushState({veil: tag, backCount, i}, ''); }catch(e2){} }
+  }
 }
 let easShown = false, silenceTriggered = false, notifSent = {1:false, 2:false, 3:false}, batteryPct = null;
 
@@ -2136,6 +2174,7 @@ function poke(){
 
 $('#resetBtn').addEventListener('click', ()=>{
   inside = false; maxD = 0; mutStage = 0; fleeStage = 0; scrollUpDist = 0; escapeCount = 0; backCount = 0; backLog = [];
+  noReturnLocked = false; minAllowedScrollY = 0;
   audioAutoEngaged = false; audio = false; if(master && AC){ master.gain.setTargetAtTime(0, AC.currentTime, .15); }
   easShown = false; silenceTriggered = false; notifSent = {1:false,2:false,3:false}; camVisits = 0; camSeen = false; hijackIdx = 0;
   userEmail = ''; registeredAccount = null; authBranch = 'login';
@@ -2235,6 +2274,14 @@ function scream(){
   [554,622,880,1244,1480].forEach(f=>{ const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(f,now); o.frequency.exponentialRampToValueAtTime(f*.42,now+1.5); o.connect(ws); o.start(now); o.stop(now+1.7); });
   const n=AC.createBufferSource(); n.buffer=nbuf; const ng=AC.createGain(); ng.gain.setValueAtTime(.65,now); ng.gain.exponentialRampToValueAtTime(.001,now+1.3); n.connect(ng); ng.connect(master); n.start(now); n.stop(now+1.4);
 }
+
+$('#backTopBtn').addEventListener('click', e=>{
+  if(noReturnLocked){
+    e.preventDefault();
+    toast(t('toast.noUp'));
+    if(audio) knockSound(0.9);
+  }
+});
 
 /* ================= BOOT ================= */
 langBtn.addEventListener('click', ()=> setLang(LANG === 'zh' ? 'en' : 'zh', true));
