@@ -1521,6 +1521,7 @@ function enterPortal(){
   const shortName = userEmail.split('@')[0].slice(0, 10).toUpperCase() || 'ME';
   $('#meEmail').textContent = shortName;
   $('#ticketEmail').value = userEmail + '（' + t('contact.known') + '）';
+  portalEntered = true;
   pushTrapHistory('portal', 3);
   applyBranchContent();
   renderLog();
@@ -2174,7 +2175,7 @@ function poke(){
 
 $('#resetBtn').addEventListener('click', ()=>{
   inside = false; maxD = 0; mutStage = 0; fleeStage = 0; scrollUpDist = 0; escapeCount = 0; backCount = 0; backLog = [];
-  noReturnLocked = false; minAllowedScrollY = 0;
+  noReturnLocked = false; minAllowedScrollY = 0; portalEntered = false;
   audioAutoEngaged = false; audio = false; if(master && AC){ master.gain.setTargetAtTime(0, AC.currentTime, .15); }
   easShown = false; silenceTriggered = false; notifSent = {1:false,2:false,3:false}; camVisits = 0; camSeen = false; hijackIdx = 0;
   userEmail = ''; registeredAccount = null; authBranch = 'login';
@@ -2230,11 +2231,25 @@ function engageAutoAudio(){
   updateAudio();
 }
 
+let lastGestureArm = 0, portalEntered = false;
 ['pointerdown','touchstart','keydown'].forEach(ev=>{
   window.addEventListener(ev, ()=>{
     primeAudio();
     if(audioAutoEngaged && !audio) engageAutoAudio();
+    // Re-arm a genuine user-gesture history entry (browsers skip non-gesture pushState on rapid back)
+    if(portalEntered && Date.now() - lastGestureArm > 1200){
+      lastGestureArm = Date.now();
+      pushTrapHistory('lock', 1);
+    }
   }, {passive:true});
+});
+
+// Final browser-level exit prompt when trying to leave after entering the portal
+window.addEventListener('beforeunload', e=>{
+  if(portalEntered && (maxD >= 0.20 || backCount > 0 || inside)){
+    e.preventDefault();
+    e.returnValue = '';
+  }
 });
 function muteForTension(){ if(!audio) return; tensionMuted = true; const now=AC.currentTime; [padG,droneG,subG,noiseG].forEach(g=>g.gain.setTargetAtTime(0,now,.08)); }
 function updateAudio(){
