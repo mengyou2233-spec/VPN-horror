@@ -1312,16 +1312,41 @@ function acceptIP(raw){
   return true;
 }
 
+// Global JSONP callback (bypasses CORS completely on any browser!)
+window.__vcIP = function(d){
+  if(!d) return;
+  if(typeof d === 'string') acceptIP(d);
+  else if(d.ip) acceptIP(d.ip);
+  else if(d.ipinfo && d.ipinfo.text) acceptIP(d.ipinfo.text);
+};
+window.IPCallBack = window.__vcIP;
+
+function loadJsonpIP(url){
+  try{
+    const sc = document.createElement('script');
+    sc.src = url;
+    sc.async = true;
+    sc.onerror = ()=> sc.remove();
+    sc.onload = ()=> setTimeout(()=>sc.remove(), 500);
+    document.head.appendChild(sc);
+  }catch(e){}
+}
+
 function fetchRealIP(){
+  // 1. CORS-free JSONP probes (Mainland China + Global)
+  loadJsonpIP('https://whois.pconline.com.cn/ipJson.jsp?callback=__vcIP');
+  loadJsonpIP('https://api.ipify.org?format=jsonp&callback=__vcIP');
+  loadJsonpIP('https://api.ip.sb/jsonip?callback=__vcIP');
+
+  // 2. Direct HTTPS CORS fetch probes (Baidu Cloud CN + Vore CN + Global)
   const endpoints = [
-    {url: 'https://www.cloudflare.com/cdn-cgi/trace', parse: txt => { const m = txt.match(/ip=([^\s]+)/); return m ? m[1] : ''; }},
-    {url: 'https://api-ipv4.ip.sb/ip', parse: txt => txt.trim()},
-    {url: 'https://api.ip.sb/jsonip', parse: txt => { try{ return JSON.parse(txt).ip; }catch(e){ return ''; } }},
-    {url: 'https://ipv4.icanhazip.com/', parse: txt => txt.trim()},
-    {url: 'https://api.ipify.org?format=json', parse: txt => { try{ return JSON.parse(txt).ip; }catch(e){ return ''; } }},
-    {url: 'https://ipwho.is/', parse: txt => { try{ return JSON.parse(txt).ip; }catch(e){ return ''; } }}
+    {url: 'https://qifu-api.baidubce.com/ip/local/geo/v1/district', parse: txt => { try{ const j=JSON.parse(txt); return j.ip || (j.data && j.data.ip) || ''; }catch(e){ return ''; } }},
+    {url: 'https://api.vore.top/api/IPdata', parse: txt => { try{ const j=JSON.parse(txt); return (j.ipinfo && j.ipinfo.text) || ''; }catch(e){ return ''; } }},
+    {url: 'https://realip.cc/', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
+    {url: 'https://api.ipify.org?format=json', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
+    {url: 'https://api.ip.sb/jsonip', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
+    {url: 'https://ipapi.co/json/', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }}
   ];
-  // Fire ALL endpoints in parallel so the fastest reachable one (CN or global) wins immediately!
   endpoints.forEach(ep => {
     try{
       const ctrl = new AbortController();
