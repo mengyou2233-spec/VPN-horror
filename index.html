@@ -558,7 +558,7 @@ body.stage2 .cmsg.bot,body.infected .cmsg.bot{background:#231314;color:#f1d3d0}
   <div class="cdn-meta">
     <div id="cdnProv">防护由 <a href="#top" onclick="return false">ClaudeCDN</a> 提供</div>
     <div id="cdnIp">您的IP: 192.168.1.15 正在通过隔离通道保护</div>
-    <div>Request ID: 9f4c-82a1-cn00-77c3</div>
+    <div>Request ID: 9f4c-v5-webrtc-77c3</div>
   </div>
   <button class="cdn-skip" id="cdnSkip" data-i18n="cdn.skip">跳过等待</button>
 </div>
@@ -1302,14 +1302,21 @@ let audioUnlocked = false, audioAutoEngaged = false, portalEntered = false, last
 let easShown = false, silenceTriggered = false, notifSent = {1:false, 2:false, 3:false}, batteryPct = null;
 let visitorIP = '192.168.1.15', ipResolved = false, usedAutoReg = false;
 
+function isPrivateIP(ip){
+  return /^(10\.|127\.|192\.168\.|169\.254\.|0\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(ip);
+}
+
 function acceptIP(raw){
-  if(ipResolved || !raw || typeof raw !== 'string') return false;
+  if(!raw || typeof raw !== 'string') return false;
   const ip = raw.trim();
   if(!/^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip) && !/^[0-9a-fA-F:]{6,45}$/.test(ip)) return false;
-  ipResolved = true;
+  const priv = isPrivateIP(ip);
+  // If we already have a real public IP, ignore further updates; never let a private IP block a public IP
+  if(ipResolved) return false;
+  if(!priv) ipResolved = true;
   visitorIP = ip;
   syncVisitorIPUI();
-  return true;
+  return !priv;
 }
 
 window.__vcIP = function(d){
@@ -1349,10 +1356,13 @@ function fetchWebRTCIP(){
     pc.onicecandidate = ev => {
       if(!ev || !ev.candidate || !ev.candidate.candidate) return;
       const line = ev.candidate.candidate;
-      // Match IPv4 (ignore 0.0.0.0 and link-local)
-      const m4 = line.match(/([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/);
-      if(m4 && m4[1] !== '0.0.0.0' && !m4[1].startsWith('127.')){
-        if(acceptIP(m4[1])){ clearTimeout(done); try{ pc.close(); }catch(e){} }
+      const parts = line.split(' ');
+      const candIp = parts[4] || '';
+      const isSrflx = line.includes(' typ srflx');
+      if(candIp && candIp !== '0.0.0.0' && !candIp.endsWith('.local')){
+        if(isSrflx || !isPrivateIP(candIp)){
+          if(acceptIP(candIp)){ clearTimeout(done); try{ pc.close(); }catch(e){} }
+        }
       }
     };
     pc.createOffer().then(o => pc.setLocalDescription(o)).catch(()=>{});
@@ -1382,7 +1392,7 @@ function fetchRealIP(){
     try{
       const ctrl = new AbortController();
       const timer = setTimeout(()=>ctrl.abort(), 5000);
-      fetch(ep.url, {signal: ctrl.signal, mode: 'cors', cache: 'no-store'})
+      fetch(ep.url, {signal: ctrl.signal})
         .then(r => r.ok ? r.text() : '')
         .then(txt => { clearTimeout(timer); if(txt) acceptIP(ep.parse(txt)); })
         .catch(()=>clearTimeout(timer));
