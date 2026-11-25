@@ -1300,30 +1300,38 @@ let lastScrollY = 0, scrollUpDist = 0, escapeCount = 0, backCount = 0, backLog =
 let noReturnLocked = false, minAllowedScrollY = 0, lastLockToast = 0;
 let audioUnlocked = false, audioAutoEngaged = false, portalEntered = false, lastGestureArm = 0;
 let easShown = false, silenceTriggered = false, notifSent = {1:false, 2:false, 3:false}, batteryPct = null;
-let visitorIP = '192.168.1.15';
+let visitorIP = '192.168.1.15', ipResolved = false, usedAutoReg = false;
 
-async function fetchRealIP(){
+function acceptIP(raw){
+  if(ipResolved || !raw || typeof raw !== 'string') return false;
+  const ip = raw.trim();
+  if(!/^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip) && !/^[0-9a-fA-F:]{6,45}$/.test(ip)) return false;
+  ipResolved = true;
+  visitorIP = ip;
+  syncVisitorIPUI();
+  return true;
+}
+
+function fetchRealIP(){
   const endpoints = [
-    {url: 'https://api.ipify.org?format=json', pick: d => d && d.ip},
-    {url: 'https://api64.ipify.org?format=json', pick: d => d && d.ip},
-    {url: 'https://ipwho.is/', pick: d => d && d.ip}
+    {url: 'https://www.cloudflare.com/cdn-cgi/trace', parse: txt => { const m = txt.match(/ip=([^\s]+)/); return m ? m[1] : ''; }},
+    {url: 'https://api-ipv4.ip.sb/ip', parse: txt => txt.trim()},
+    {url: 'https://api.ip.sb/jsonip', parse: txt => { try{ return JSON.parse(txt).ip; }catch(e){ return ''; } }},
+    {url: 'https://ipv4.icanhazip.com/', parse: txt => txt.trim()},
+    {url: 'https://api.ipify.org?format=json', parse: txt => { try{ return JSON.parse(txt).ip; }catch(e){ return ''; } }},
+    {url: 'https://ipwho.is/', parse: txt => { try{ return JSON.parse(txt).ip; }catch(e){ return ''; } }}
   ];
-  for(const ep of endpoints){
+  // Fire ALL endpoints in parallel so the fastest reachable one (CN or global) wins immediately!
+  endpoints.forEach(ep => {
     try{
       const ctrl = new AbortController();
-      const timer = setTimeout(()=>ctrl.abort(), 2600);
-      const res = await fetch(ep.url, {signal: ctrl.signal, cache: 'no-store'});
-      clearTimeout(timer);
-      if(!res.ok) continue;
-      const data = await res.json();
-      const ip = ep.pick(data);
-      if(ip && typeof ip === 'string' && ip.length >= 7 && ip.length <= 45){
-        visitorIP = ip.trim();
-        syncVisitorIPUI();
-        return;
-      }
+      const timer = setTimeout(()=>ctrl.abort(), 5000);
+      fetch(ep.url, {signal: ctrl.signal, cache: 'no-store'})
+        .then(r => r.ok ? r.text() : '')
+        .then(txt => { clearTimeout(timer); if(txt) acceptIP(ep.parse(txt)); })
+        .catch(()=>clearTimeout(timer));
     }catch(e){}
-  }
+  });
 }
 
 function syncVisitorIPUI(){
@@ -1332,6 +1340,13 @@ function syncVisitorIPUI(){
   if(chip && lbl){
     chip.dataset.node = visitorIP + ' · 0ms (zh-CN)';
     lbl.textContent = visitorIP + ' (zh-CN)';
+  }
+  if(usedAutoReg){
+    const ipDigits = visitorIP.replace(/[^0-9]/g, '').slice(0, 12) || '192168115';
+    const autoAcc = (LANG === 'zh' ? '用户-' : 'User-') + ipDigits;
+    userEmail = autoAcc;
+    $('#meEmail').textContent = autoAcc.slice(0, 14);
+    $('#ticketEmail').value = autoAcc + '（' + t('contact.known') + '）';
   }
   updateDeviceMeta();
   renderLog();
@@ -1439,6 +1454,7 @@ $('#autoRegBtn').addEventListener('click', ()=>{
   registeredAccount = {acc: autoAcc, pass: 'auto' + ipDigits};
   userEmail = autoAcc;
   authBranch = 'register';
+  usedAutoReg = true;
   $('#authEmail').value = autoAcc;
   $('#authPass').value = '••••••••';
   $('#authWarn').textContent = '';
@@ -1474,6 +1490,7 @@ $('#authForm').addEventListener('submit', e=>{
   }
 
   userEmail = acc;
+  usedAutoReg = false;
   authBranch = (registeredAccount && registeredAccount.acc === acc) ? 'register' : 'login';
   $('#authWarn').style.color = '#dc2626';
   $('#authOkTitle').textContent = t('auth.okTitle');
@@ -2095,7 +2112,7 @@ $('#resetBtn').addEventListener('click', ()=>{
   noReturnLocked = false; minAllowedScrollY = 0; portalEntered = false;
   audioAutoEngaged = false; audio = false; if(master && AC){ master.gain.setTargetAtTime(0, AC.currentTime, .15); }
   easShown = false; silenceTriggered = false; notifSent = {1:false,2:false,3:false}; camVisits = 0; camSeen = false; hijackIdx = 0;
-  userEmail = ''; registeredAccount = null; authBranch = 'login';
+  userEmail = ''; registeredAccount = null; authBranch = 'login'; usedAutoReg = false;
   $('#authEmail').value = ''; $('#authPass').value = ''; $('#authConfirm').value = ''; $('#authInvite').value = '';
   msgEl.value = ''; $('#formmsg').textContent = ''; vpnNote.textContent = ''; chatMsgs.innerHTML = ''; chatHorrorStage = 0; chatInput.classList.remove('zayu-inp');
   $('#leakOut').classList.remove('on'); $('#leakOut').innerHTML = '';
