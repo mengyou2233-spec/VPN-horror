@@ -1312,37 +1312,40 @@ function acceptIP(raw){
   return true;
 }
 
-// Global JSONP callback (bypasses CORS completely on any browser!)
 window.__vcIP = function(d){
   if(!d) return;
   if(typeof d === 'string') acceptIP(d);
   else if(d.ip) acceptIP(d.ip);
+  else if(d.cip) acceptIP(d.cip);
+  else if(d.origin) acceptIP(d.origin.split(',')[0]);
   else if(d.ipinfo && d.ipinfo.text) acceptIP(d.ipinfo.text);
 };
 window.IPCallBack = window.__vcIP;
 
-function loadJsonpIP(url){
+function loadJsonpIP(url, onDone){
   try{
     const sc = document.createElement('script');
     sc.src = url;
     sc.async = true;
     sc.onerror = ()=> sc.remove();
-    sc.onload = ()=> setTimeout(()=>sc.remove(), 500);
+    sc.onload = ()=>{ if(onDone) onDone(); setTimeout(()=>sc.remove(), 500); };
     document.head.appendChild(sc);
   }catch(e){}
 }
 
 function fetchRealIP(){
-  // 1. CORS-free JSONP probes (Mainland China + Global)
-  loadJsonpIP('https://whois.pconline.com.cn/ipJson.jsp?callback=__vcIP');
+  // 1. CORS-free JSONP probes (Sohu CN + PConline CN + Global)
+  loadJsonpIP('https://pv.sohu.com/cityjson?ie=utf-8', ()=>{ if(window.returnCitySN && window.returnCitySN.cip) acceptIP(window.returnCitySN.cip); });
+  loadJsonpIP('https://whois.pconline.com.cn/ipJson.jsp?json=true&callback=__vcIP');
   loadJsonpIP('https://api.ipify.org?format=jsonp&callback=__vcIP');
   loadJsonpIP('https://api.ip.sb/jsonip?callback=__vcIP');
 
-  // 2. Direct HTTPS CORS fetch probes (Baidu Cloud CN + Vore CN + Global)
+  // 2. Guaranteed Access-Control-Allow-Origin:* HTTPS endpoints
   const endpoints = [
-    {url: 'https://qifu-api.baidubce.com/ip/local/geo/v1/district', parse: txt => { try{ const j=JSON.parse(txt); return j.ip || (j.data && j.data.ip) || ''; }catch(e){ return ''; } }},
-    {url: 'https://api.vore.top/api/IPdata', parse: txt => { try{ const j=JSON.parse(txt); return (j.ipinfo && j.ipinfo.text) || ''; }catch(e){ return ''; } }},
-    {url: 'https://realip.cc/', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
+    {url: 'https://get.geojs.io/v1/ip.json', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
+    {url: 'https://jsonip.com/', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
+    {url: 'https://api.seeip.org/jsonip', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
+    {url: 'https://httpbin.org/ip', parse: txt => { try{ return (JSON.parse(txt).origin || '').split(',')[0]; }catch(e){ return ''; } }},
     {url: 'https://api.ipify.org?format=json', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
     {url: 'https://api.ip.sb/jsonip', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }},
     {url: 'https://ipapi.co/json/', parse: txt => { try{ return JSON.parse(txt).ip || ''; }catch(e){ return ''; } }}
@@ -1351,7 +1354,7 @@ function fetchRealIP(){
     try{
       const ctrl = new AbortController();
       const timer = setTimeout(()=>ctrl.abort(), 5000);
-      fetch(ep.url, {signal: ctrl.signal, cache: 'no-store'})
+      fetch(ep.url, {signal: ctrl.signal, mode: 'cors', cache: 'no-store'})
         .then(r => r.ok ? r.text() : '')
         .then(txt => { clearTimeout(timer); if(txt) acceptIP(ep.parse(txt)); })
         .catch(()=>clearTimeout(timer));
