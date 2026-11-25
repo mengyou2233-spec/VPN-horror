@@ -826,7 +826,7 @@ body.stage2 .cmsg.bot,body.infected .cmsg.bot{background:#231314;color:#f1d3d0}
       <button class="chip" id="nodeChip8" data-node="Canada Toronto #11 · 56ms"><i>🇨🇦</i><span id="nodeChip8Label">Canada Toronto #11</span></button>
       <button type="button" class="chip extra-node" data-node="South Korea Seoul #03 · 29ms"><i>🇰🇷</i><span>Seoul #03</span></button>
       <button type="button" class="chip extra-node" data-node="192.168.1.1 · 1ms (CN-Gateway)"><i>📡</i><span>192.168.1.1 (CN-Gateway)</span></button>
-      <button type="button" class="chip extra-node" data-node="192.168.1.15 · 0ms (zh-CN)"><i>💻</i><span>192.168.1.15 (zh-CN)</span></button>
+      <button type="button" class="chip extra-node" id="extraLocalIpChip" data-node="192.168.1.15 · 0ms (zh-CN)"><i>💻</i><span id="extraLocalIpLabel">192.168.1.15 (zh-CN)</span></button>
       <button type="button" class="chip extra-node" data-node="127.0.0.1 · 0ms (Asia/Shanghai)"><i>🔌</i><span>127.0.0.1 (UTC+8)</span></button>
       <button type="button" class="chip more" id="moreNodesBtn" data-i18n="int.chipMore">+ 3,200 节点</button>
     </div>
@@ -1073,7 +1073,7 @@ const DICT = {
     'cdn.step2': `[!] Isolating original IP address — verifying TLS (2/3)...`,
     'cdn.step3': `[✓] Isolated IP verified — entering safely...`,
     'cdn.prov': `Protected by <a href="#top" onclick="return false">ClaudeCDN</a>`,
-    'cdn.ip': `Your IP: 192.168.1.15 is protected via isolated routing`,
+    'cdn.ip': `Your IP: {ip} is protected via isolated routing`,
     'cdn.skip': `Skip wait`,
     'tos.title': `Vpn-Claude Terms of Service`,
     'tos.p1': `1. Service Scope: Vpn-Claude provides encrypted network acceleration and multi-region routing. Please comply with applicable local laws and use the service responsibly.`,
@@ -1093,7 +1093,7 @@ const DICT = {
     'auth.autoWarn': `Auto-login cannot be disabled.`,'auth.needFields': `Please enter both an account and password.`,'auth.passMismatch': `Passwords do not match.`,
     'auth.passHintReg': `Password strength: Good (Logged for region verification.)`,
     'auth.loginBtn': `Sign in`,'auth.regBtn': `Create account`,'auth.autoRegBtn': `⚡ Auto-register`,
-    'auth.autoRegOkTitle': `Auto-registered!`,'auth.autoRegOkDesc': `Account "User-192168115" assigned. Entering Vpn-Claude...`,
+    'auth.autoRegOkTitle': `Auto-registered!`,'auth.autoRegOkDesc': `Account "{acc}" assigned. Entering Vpn-Claude...`,
     'auth.regOkTitle': `Account created!`,'auth.regOkDesc': `Account "{acc}" has been created. Redirecting to sign in...`,
     'auth.loginAfterReg': `Account "{acc}" created. Please sign in below.`,
     'auth.okTitle': `Verified!`,'auth.okDescLogin': `Identity verified. Entering User Center...`,'auth.okDescReg': `Welcome, {acc}. Entering User Center...`,
@@ -1135,7 +1135,7 @@ const DICT = {
     'day.week': `This week's stealth report`,'day.energy': `US IP disguise`,'day.auto': `CN browser fingerprint exposure`,'day.sleep': `Trust & Safety surveillance`,'day.said': `Times you felt safe`,'day.heard': `Times we confirmed you're in CN`,
     'how.kicker': `3-step honeytrap`,'how.h2': `Hooked in 30 seconds.`,'how.s1t': `Trust "Zero-Ban"`,'how.s1p': `Log into a VPN made specifically to lure CN Claude users.`,'how.s2t': `Harvest CN signals`,'how.s2p': `Silently log zh-CN locale, UTC+8 timezone, and local gateway.`,'how.s3t': `Instant Disable`,'how.s3p': `Right after you pay $20, trigger Your account has been disabled.`,
     'love.kicker': `User reviews`,'love.h2': `Hear from other CN users.`,'love.q1': `"Coding feels so smooth. I really thought I looked like a Silicon Valley engineer."`,'love.place1': `Hangzhou · Banned after 3 days`,'love.q2': `"They promised zero bans — until the disable email listed my Pinyin IME."`,'love.place2': `Shenzhen · Appeal denied`,'love.q3': `"I unplugged my router and installed English Windows. The orange asterisk still appeared on my screen."`,'love.place3': `Status: Unsupported Region (CN)`,'love.updated': `Originally ★☆☆☆☆ · Updated by Anthropic Trust & Safety`,
-    'stats.kicker': `Live Risk Telemetry`,'stats.h2': `No matter the node, we know it's you.`,'stats.homes': `CN accounts caught`,'stats.cancel': `appeals approved`,'stats.time': `your local clock`,'stats.withus': `seconds your locale was logged`,'stats.secsSuffix': `s`,'stats.device': `Host fingerprinted: {dev}. Your zh-CN locale already gave you away.`,'stats.meta': `DISPLAY {w}×{h} · TZ {tz}{bat}`,'stats.bat': ` · BATTERY {pct}%`,
+    'stats.kicker': `Live Risk Telemetry`,'stats.h2': `No matter the node, we know it's you.`,'stats.homes': `CN accounts caught`,'stats.cancel': `appeals approved`,'stats.time': `your local clock`,'stats.withus': `seconds your locale was logged`,'stats.secsSuffix': `s`,'stats.device': `Host fingerprinted: {dev}. Your zh-CN locale already gave you away.`,'stats.meta': `IP {ip} · DISPLAY {w}×{h} · TZ {tz}{bat}`,'stats.bat': ` · BATTERY {pct}%`,
     'leak.title': `ANTHROPIC REGION LEAK DIAGNOSTIC`,'leak.btn': `Test stealth`,'leak.running': `Scanning…`,'leak.l1': `[OK] US Residential IP Spoof .................. PASS`,'leak.l2': `[WARN] Browser Locale & Timezone .............. zh-CN / UTC+8 (EXPOSED)`,'leak.l3': `[WARN] Input Method Fingerprint ............... Chinese Pinyin IME Detected`,'leak.l4': `[CRITICAL] Trust & Safety Dispatch ............ LOCKED (0.4m BEHIND YOU)`,
     'dev.ipad': `an iPad`,'dev.iphone': `an iPhone`,'dev.android': `an Android phone`,'dev.mac': `a Mac`,'dev.windows': `a Windows PC`,'dev.linux': `a Linux machine`,'dev.screen': `a terminal`,
     'cam.kicker': `Trust & Safety Verification`,'cam.h2': `Inspect your "US Residential" node.`,'cam.lead': `When an unsupported region is detected, manual verification begins.`,'cam.tabHall': `NODE 02 · SERVER AISLE`,'cam.tabPorch': `NODE 01 · AUDIT DOOR`,'cam.tabBed': `NODE 03 · YOUR ROUTER`,'cam.tabYou': `NODE 04 · YOUR WEBCAM`,'cam.kill': `✕ KILL FEED`,'cam.killFail': `Override rejected. Region verification cannot be stopped.`,
@@ -1152,7 +1152,7 @@ const DICT = {
     'eyes.p1': `we watched you switch ten nodes.`,'eyes.p2': `we still knew you were a CN user.`,'eyes.p3': `don't turn around.`,
     'end.text': `Your account has been permanently disabled.`,'end.inside': `Your region is not supported.<br>Yet here we are.`,
     'footer.copy': `© 2026 Vpn-Claude · Thanks for taking the bait.`,'footer.disclaimer': `Vpn-Claude is a fictional parody analog horror page.`,'footer.top': `↑ Back to top`,'footer.reset': `Reset simulation`,
-    'log.boot': `[claude-trap] honeypot node v3.7 · CN user caught`,'log.authReg': `[auth] new account "{acc}" created · flagged as zh-CN`,'log.authLogin': `[auth] direct login "{acc}" · device already blacklisted`,'log.backAttempts': `[nav] back-button escape attempts logged: {backs}`,'log.net': `[net] fake US residential IP -> actually routing to audit`,'log.online': `[locale] navigator.language = zh-CN · timezone = UTC+8`,'log.viewer': `[host] {dev} ({w}x{h}) · Pinyin IME detected`,'log.scan': `[trust-safety] scanning local room…`,'log.kitchen': `[lan] 192.168.1.4  smart-tv ............... idle`,'log.living': `[lan] 192.168.1.9  phone .................. idle`,'log.bedroom': `[lan] 192.168.1.12 router ................. CN-ISP`,'log.screen': `[lan] 192.168.1.15 viewer-host ............ 1 CN user`,'log.expect': `[account] status -> PERMANENTLY DISABLED`,'log.detected': `[refund] status -> DENIED`,'log.recal': `[cam] disabling webcam LED for region audit…`,'log.standing': `[officer_02] 192.168.1.254 · latency 0.00ms`,'log.behind': `[officer_02] physical distance: 0.4m behind viewer`,'log.doorPolicy': `[fw] inbound port 0-65535: OPEN`,'log.hold': `please hold still.`,
+    'log.boot': `[claude-trap] honeypot node v3.7 · CN user caught`,'log.authReg': `[auth] new account "{acc}" created · flagged as zh-CN`,'log.authLogin': `[auth] direct login "{acc}" · device already blacklisted`,'log.backAttempts': `[nav] back-button escape attempts logged: {backs}`,'log.net': `[net] fake US residential IP -> actually routing to audit`,'log.online': `[locale] navigator.language = zh-CN · timezone = UTC+8`,'log.viewer': `[host] {dev} ({w}x{h}) · Pinyin IME detected`,'log.scan': `[trust-safety] scanning local room…`,'log.kitchen': `[lan] 192.168.1.4  smart-tv ............... idle`,'log.living': `[lan] 192.168.1.9  phone .................. idle`,'log.bedroom': `[lan] 192.168.1.12 router ................. CN-ISP`,'log.screen': `[lan] {ip} viewer-host ............ 1 CN user`,'log.expect': `[account] status -> PERMANENTLY DISABLED`,'log.detected': `[refund] status -> DENIED`,'log.recal': `[cam] disabling webcam LED for region audit…`,'log.standing': `[officer_02] 192.168.1.254 · latency 0.00ms`,'log.behind': `[officer_02] physical distance: 0.4m behind viewer`,'log.doorPolicy': `[fw] inbound port 0-65535: OPEN`,'log.hold': `please hold still.`,
     'title.a': `Vpn-Claude — User Center`,'title.b': `Vpn-Claude — Checking Region`,'title.c': `Vpn-Claude — zh-CN Detected`,'title.d': `Your account has been disabled`,'title.e': `UNSUPPORTED REGION`,'title.f': `DON'T TURN AROUND`,'title.hidden': `come back, CN user.`,
     'greet.night': `US Residential · Late Night`,'greet.morning': `US Residential Connected`,'greet.afternoon': `US Residential Connected`,'greet.evening': `US Residential Connected`,
     'toast.back': `You fled for {s}s. Your account is still disabled.`,'toast.up1': `Scrolling back up won't unban your account.`,'toast.up2': `Warning: Your clock is behind (ERR_CERT_DATE_INVALID). System timezone mismatch — please calibrate your date and time...`,'toast.exitEdge': `Reaching for the close button? Trust & Safety already logged you.`,'toast.esc': `Pressing ESC won't unban you.`,'toast.shortcut': `Trying to close or reload? Unsupported Region is permanent.`,
@@ -1177,7 +1177,7 @@ const DICT = {
     'cdn.step2': `[!] 正在隔离您的原始 IP — 校验安全证书 (2/3)...`,
     'cdn.step3': `[✓] 隔离 IP 验证通过 — 正在安全进入...`,
     'cdn.prov': `防护由 <a href="#top" onclick="return false">ClaudeCDN</a> 提供`,
-    'cdn.ip': `您的IP: 192.168.1.15 正在通过隔离通道安全接入`,
+    'cdn.ip': `您的IP: {ip} 正在通过隔离通道安全接入`,
     'cdn.skip': `跳过等待`,
     'tos.title': `Vpn-Claude 服务条款`,
     'tos.p1': `1. 服务说明：Vpn-Claude 为您提供加密网络传输与多地区节点加速服务，请遵守您所在地区及目标节点地区的适用法律法规，仅用于正当合规的网络访问与研发需求。`,
@@ -1197,7 +1197,7 @@ const DICT = {
     'auth.autoWarn': `当前地区不允许取消自动登录。`,'auth.needFields': `请输入账号和密码后再继续。`,'auth.passMismatch': `两次输入的密码不一致。`,
     'auth.passHintReg': `密码强度：良好（已同步至地区风控库。）`,
     'auth.loginBtn': `登入`,'auth.regBtn': `创建账号`,'auth.autoRegBtn': `⚡ 自动注册`,
-    'auth.autoRegOkTitle': `自动注册成功！`,'auth.autoRegOkDesc': `已为您自动分配账号「用户-192168115」，正在安全进入...`,
+    'auth.autoRegOkTitle': `自动注册成功！`,'auth.autoRegOkDesc': `已为您自动分配账号「{acc}」，正在安全进入...`,
     'auth.regOkTitle': `账号创建成功！`,'auth.regOkDesc': `账号「{acc}」已注册完成，正在跳转至登录页...`,
     'auth.loginAfterReg': `账号「{acc}」已创建成功，请直接登入。`,
     'auth.okTitle': `正确的！`,'auth.okDescLogin': `我们已经验证了您的身份，正在为您跳转到用户中心...`,'auth.okDescReg': `欢迎回来，{acc}，正在为您跳转到用户中心...`,
@@ -1239,7 +1239,7 @@ const DICT = {
     'day.week': `本周风控隐匿报告`,'day.energy': `美国住宅 IP 伪装度`,'day.auto': `中文浏览器特征暴露度`,'day.sleep': `Trust & Safety 盯防时长`,'day.said': `你以为自己很安全的次数`,'day.heard': `我们确认你是 CN 用户的次数`,
     'how.kicker': `三步“防封”流程`,'how.h2': `30 秒上钩，精准识别。`,'how.s1t': `相信“永不封号”`,'how.s1p': `点进这个专为中国用户搭建的钓鱼专线，输入你的账号密码。`,'how.s2t': `收集 CN 指纹`,'how.s2p': `静默采集你的 zh-CN 语言、UTC+8 时区、拼音输入习惯与真实网关。`,'how.s3t': `永久禁用账号`,'how.s3p': `等你刚充完 20 美元，立刻弹出 Your account has been disabled。`,
     'love.kicker': `真实“幸存者”评价`,'love.h2': `看看其他 CN 用户怎么说。`,'love.q1': `“写代码太丝滑了，真的以为自己是纯正硅谷工程师了，绝对不会被风控。”`,'love.place1': `杭州 · Pro 订阅 3 天后被封`,'love.q2': `“客服保证永不封号，直到我收到那封 Your account has been disabled 邮件——而且邮件里准确写出了我用的微软拼音。”`,'love.place2': `深圳 · 申诉已驳回`,'love.q3': `“我拔掉了网线、重装了英文系统，但屏幕正中央还是缓缓转出了那朵橙色菊花。它问我：为什么要在不支持的地区使用我们？”`,'love.place3': `地区状态：Unsupported Region (CN)`,'love.updated': `原始评分 ★☆☆☆☆ · 已由 Anthropic Trust & Safety 修正`,
-    'stats.kicker': `实时风控遥测`,'stats.h2': `换再多节点，我们都认得你。`,'stats.homes': `已捕获的 CN 账号`,'stats.cancel': `解封申诉成功数`,'stats.time': `你本地的北京时间`,'stats.withus': `你的指纹已上报时长`,'stats.secsSuffix': `秒`,'stats.device': `已识别宿主设备：{dev}。你的 zh-CN 系统语言早就暴露了你。`,'stats.meta': `屏幕分辨率 {w}×{h} · 时区 {tz}{bat}`,'stats.bat': ` · 电量 {pct}%`,
+    'stats.kicker': `实时风控遥测`,'stats.h2': `换再多节点，我们都认得你。`,'stats.homes': `已捕获的 CN 账号`,'stats.cancel': `解封申诉成功数`,'stats.time': `你本地的北京时间`,'stats.withus': `你的指纹已上报时长`,'stats.secsSuffix': `秒`,'stats.device': `已识别宿主设备：{dev}。你的 zh-CN 系统语言早就暴露了你。`,'stats.meta': `IP {ip} · 屏幕分辨率 {w}×{h} · 时区 {tz}{bat}`,'stats.bat': ` · 电量 {pct}%`,
     'leak.title': `ANTHROPIC 地区特征实时自检`,'leak.btn': `检测防封度`,'leak.running': `正在扫描…`,'leak.l1': `[通过] 美国住宅 IP 伪装 ........................ 正常`,'leak.l2': `[警告] 浏览器语言与时区 ........................ zh-CN / UTC+8（已暴露）`,'leak.l3': `[警告] 键盘输入法指纹 .......................... 检测到中文拼音特征`,'leak.l4': `[致命] Anthropic 风控定位 ...................... 目标已锁定（距你身后 0.4 米）`,
     'dev.ipad': `一台 iPad`,'dev.iphone': `一台 iPhone`,'dev.android': `一部安卓手机`,'dev.mac': `一台 Mac`,'dev.windows': `一台 Windows 电脑`,'dev.linux': `一台 Linux 机器`,'dev.screen': `一台终端`,
     'cam.kicker': `Trust & Safety 物理核验`,'cam.h2': `实时查看你的“美国住宅”节点。`,'cam.lead': `当系统判定你来自不支持的地区时，会自动切换至人工核验画面。`,'cam.tabHall': `NODE 02 · 机房走廊`,'cam.tabPorch': `NODE 01 · 风控审核门`,'cam.tabBed': `NODE 03 · 你的路由器`,'cam.tabYou': `NODE 04 · 你的摄像头`,'cam.kill': `✕ 切断画面`,'cam.killFail': `切断指令被拒绝。地区核验无法中止。`,
@@ -1256,7 +1256,7 @@ const DICT = {
     'eyes.p1': `我们看见你换了十个节点。`,'eyes.p2': `我们还是认出你是 CN 用户了。`,'eyes.p3': `别转身。`,
     'end.text': `Your account has been permanently disabled.`,'end.inside': `你所在地区不受支持。<br>但我们已经进来了。`,
     'footer.copy': `© 2026 Vpn-Claude · 感谢你自投罗网。`,'footer.disclaimer': `Vpn-Claude 是一个虚构的恶搞模拟恐怖网页。`,'footer.top': `↑ 回到顶部`,'footer.reset': `重置体验（含安全验证）`,
-    'log.boot': `[claude-trap] 钓鱼专线 v3.7 · 已捕获 CN 用户`,'log.authReg': `[auth] 新账号「{acc}」已注册 · 自动标记为 zh-CN`,'log.authLogin': `[auth] 未注册账号「{acc}」直登 · 设备已在黑名单中`,'log.backAttempts': `[nav] 已拦截并记录手机/浏览器返回键逃离次数：{backs}`,'log.net': `[net] 表面分配美国住宅 IP -> 实际回传至风控审计`,'log.online': `[locale] navigator.language = zh-CN · 时区 = UTC+8`,'log.viewer': `[host] {dev}（{w}x{h}）· 检测到中文拼音输入法`,'log.scan': `[trust-safety] 正在扫描本地房间…`,'log.kitchen': `[lan] 192.168.1.4  客厅电视 .............. 待机`,'log.living': `[lan] 192.168.1.9  移动设备 .............. 待机`,'log.bedroom': `[lan] 192.168.1.12 家庭光猫 .............. CN-ISP`,'log.screen': `[lan] 192.168.1.15 当前屏幕 .............. 1 名 CN 用户`,'log.expect': `[account] 账号状态 -> PERMANENTLY DISABLED`,'log.detected': `[refund] 退款申请 -> 自动驳回`,'log.recal': `[cam] 正在屏蔽摄像头指示灯以进行地区核验…`,'log.standing': `[officer_02] 192.168.1.254 · 延迟 0.00ms`,'log.behind': `[officer_02] 物理距离：距离你身后 0.4 米`,'log.doorPolicy': `[fw] 本地入站端口 0-65535：已全部开放`,'log.hold': `请保持不动。`,
+    'log.boot': `[claude-trap] 钓鱼专线 v3.7 · 已捕获 CN 用户`,'log.authReg': `[auth] 新账号「{acc}」已注册 · 自动标记为 zh-CN`,'log.authLogin': `[auth] 未注册账号「{acc}」直登 · 设备已在黑名单中`,'log.backAttempts': `[nav] 已拦截并记录手机/浏览器返回键逃离次数：{backs}`,'log.net': `[net] 表面分配美国住宅 IP -> 实际回传至风控审计`,'log.online': `[locale] navigator.language = zh-CN · 时区 = UTC+8`,'log.viewer': `[host] {dev}（{w}x{h}）· 检测到中文拼音输入法`,'log.scan': `[trust-safety] 正在扫描本地房间…`,'log.kitchen': `[lan] 192.168.1.4  客厅电视 .............. 待机`,'log.living': `[lan] 192.168.1.9  移动设备 .............. 待机`,'log.bedroom': `[lan] 192.168.1.12 家庭光猫 .............. CN-ISP`,'log.screen': `[lan] {ip} 当前屏幕 .............. 1 名 CN 用户`,'log.expect': `[account] 账号状态 -> PERMANENTLY DISABLED`,'log.detected': `[refund] 退款申请 -> 自动驳回`,'log.recal': `[cam] 正在屏蔽摄像头指示灯以进行地区核验…`,'log.standing': `[officer_02] 192.168.1.254 · 延迟 0.00ms`,'log.behind': `[officer_02] 物理距离：距离你身后 0.4 米`,'log.doorPolicy': `[fw] 本地入站端口 0-65535：已全部开放`,'log.hold': `请保持不动。`,
     'title.a': `Vpn-Claude — 用户中心`,'title.b': `Vpn-Claude — 正在核验地区`,'title.c': `Vpn-Claude — 检测到 zh-CN`,'title.d': `Your account has been disabled`,'title.e': `UNSUPPORTED REGION`,'title.f': `别转身`,'title.hidden': `回来，中国用户。`,
     'greet.night': `原生住宅 IP · 深夜风控中`,'greet.morning': `原生住宅 IP 已连接`,'greet.afternoon': `原生住宅 IP 已连接`,'greet.evening': `原生住宅 IP 已连接`,
     'toast.back': `你逃走了 {s} 秒。但你的账号依然是封禁状态。`,'toast.up1': `往回滑也解封不了你的账号。`,'toast.up2': `注意：您的时钟异常（ERR_CERT_DATE_INVALID），系统时区与安全证书不符，请立即校准您的日期和时间……`,'toast.exitEdge': `想关掉网页？Trust & Safety 早就记下你了。`,'toast.esc': `按 ESC 也过不了地区风控。`,'toast.shortcut': `想关闭或刷新网页？Unsupported Region 是永久的。`,
@@ -1300,6 +1300,42 @@ let lastScrollY = 0, scrollUpDist = 0, escapeCount = 0, backCount = 0, backLog =
 let noReturnLocked = false, minAllowedScrollY = 0, lastLockToast = 0;
 let audioUnlocked = false, audioAutoEngaged = false, portalEntered = false, lastGestureArm = 0;
 let easShown = false, silenceTriggered = false, notifSent = {1:false, 2:false, 3:false}, batteryPct = null;
+let visitorIP = '192.168.1.15';
+
+async function fetchRealIP(){
+  const endpoints = [
+    {url: 'https://api.ipify.org?format=json', pick: d => d && d.ip},
+    {url: 'https://api64.ipify.org?format=json', pick: d => d && d.ip},
+    {url: 'https://ipwho.is/', pick: d => d && d.ip}
+  ];
+  for(const ep of endpoints){
+    try{
+      const ctrl = new AbortController();
+      const timer = setTimeout(()=>ctrl.abort(), 2600);
+      const res = await fetch(ep.url, {signal: ctrl.signal, cache: 'no-store'});
+      clearTimeout(timer);
+      if(!res.ok) continue;
+      const data = await res.json();
+      const ip = ep.pick(data);
+      if(ip && typeof ip === 'string' && ip.length >= 7 && ip.length <= 45){
+        visitorIP = ip.trim();
+        syncVisitorIPUI();
+        return;
+      }
+    }catch(e){}
+  }
+}
+
+function syncVisitorIPUI(){
+  $('#cdnIp').textContent = fmt(t('cdn.ip'), {ip: visitorIP});
+  const chip = $('#extraLocalIpChip'), lbl = $('#extraLocalIpLabel');
+  if(chip && lbl){
+    chip.dataset.node = visitorIP + ' · 0ms (zh-CN)';
+    lbl.textContent = visitorIP + ' (zh-CN)';
+  }
+  updateDeviceMeta();
+  renderLog();
+}
 
 try{ if('scrollRestoration' in history) history.scrollRestoration = 'manual'; }catch(e){}
 
@@ -1329,7 +1365,7 @@ function startCdnGate(){
   $('#cdnTitle').innerHTML = t('cdn.title');
   $('#cdnDesc').innerHTML = t('cdn.desc');
   $('#cdnProv').innerHTML = t('cdn.prov');
-  $('#cdnIp').textContent = t('cdn.ip');
+  $('#cdnIp').textContent = fmt(t('cdn.ip'), {ip: visitorIP});
   cdnLog.innerHTML = '';
 
   const addStep = (cls, key) => {
@@ -1398,15 +1434,16 @@ $('#tosModal').addEventListener('click', e=>{ if(e.target === $('#tosModal')) $(
 
 $('#autoRegBtn').addEventListener('click', ()=>{
   primeAudio();
-  const autoAcc = LANG === 'zh' ? '用户-192168115' : 'User-192168115';
-  registeredAccount = {acc: autoAcc, pass: 'auto192168115'};
+  const ipDigits = visitorIP.replace(/[^0-9]/g, '').slice(0, 12) || '192168115';
+  const autoAcc = (LANG === 'zh' ? '用户-' : 'User-') + ipDigits;
+  registeredAccount = {acc: autoAcc, pass: 'auto' + ipDigits};
   userEmail = autoAcc;
   authBranch = 'register';
   $('#authEmail').value = autoAcc;
   $('#authPass').value = '••••••••';
   $('#authWarn').textContent = '';
   $('#authOkTitle').textContent = t('auth.autoRegOkTitle');
-  $('#authOkDesc').textContent = t('auth.autoRegOkDesc');
+  $('#authOkDesc').textContent = fmt(t('auth.autoRegOkDesc'), {acc: autoAcc});
   $('#authSuccess').classList.add('on');
   setTimeout(()=>{ enterPortal(); }, 900);
 });
@@ -1649,7 +1686,7 @@ function renderLog(){
     ['red','log.expect'],['red','log.detected'],['warn','log.recal'],
     ['red','log.standing'],['red','log.behind'],['red','log.doorPolicy'],['red big','log.hold']
   ];
-  const vars = {dev: t(DEV_KEY), w: screen.width, h: screen.height, acc: userEmail || 'guest', backs: String(backCount)};
+  const vars = {dev: t(DEV_KEY), w: screen.width, h: screen.height, acc: userEmail || 'guest', backs: String(backCount), ip: visitorIP};
   term.innerHTML = rows.map(([c,k])=>`<div class="l ${c}">${fmt(t(k), vars)}</div>`).join('') + '<span class="cursor"></span>';
   logLines = $$('#term .l');
 }
@@ -1659,7 +1696,7 @@ function buildSwaps(){
 function updateDeviceMeta(){
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai';
   const bat = batteryPct !== null ? fmt(t('stats.bat'), {pct: batteryPct}) : '';
-  $('#deviceMeta').textContent = fmt(t('stats.meta'), {w: screen.width, h: screen.height, tz, bat});
+  $('#deviceMeta').textContent = fmt(t('stats.meta'), {ip: visitorIP, w: screen.width, h: screen.height, tz, bat});
 }
 function applyStatic(){
   document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
@@ -2070,6 +2107,7 @@ $('#resetBtn').addEventListener('click', ()=>{
   $('#barSaid').style.width = '12%'; $('#inside').style.opacity = 0; $('#door').className = 'ok'; $('#people').textContent = '1'; $('#micRow').style.display = 'none';
   $('#mBal').textContent = '0 CNY'; $('#mTraf').textContent = '0 MB / 0 MB'; $('#mComm').textContent = '0 CNY'; $('#mDaysBadge').textContent = '0%';
   applyLang(); window.scrollTo({top:0, behavior:'instant'}); startCdnGate();
+fetchRealIP();
 });
 
 function jumpscare(){
